@@ -1,1 +1,196 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>สแกน QR Code สมาชิก - เทศบาลตำบลสันป่าตอง</title>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600;700&family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <style>
+    body {
+      font-family: 'Sarabun', sans-serif;
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card {
+      width: 100%;
+      max-width: 430px;
+      background: #ffffff;
+      padding: 24px 20px;
+      border-radius: 18px;
+      box-shadow: 0 10px 30px rgba(2, 132, 199, 0.15);
+      border: 1px solid #bae6fd;
+    }
+    h3 {
+      font-family: 'Prompt', sans-serif;
+      color: #0284c7;
+      margin: 0 0 6px 0;
+    }
+    .sub-title {
+      color: #64748b;
+      font-size: 14px;
+      margin-bottom: 16px;
+    }
+    #reader {
+      width: 100%;
+      min-height: 260px;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #0f172a;
+    }
+    #status {
+      margin: 16px 0;
+      font-size: 16px;
+      font-weight: bold;
+      color: #0284c7;
+      line-height: 1.5;
+    }
+    .btn-retry {
+      display: none;
+      width: 100%;
+      padding: 12px 20px;
+      margin-bottom: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      font-family: 'Sarabun', sans-serif;
+      background-color: #0284c7;
+      color: #ffffff;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    .btn-back {
+      display: inline-block;
+      width: 100%;
+      padding: 12px 20px;
+      font-size: 16px;
+      font-weight: bold;
+      font-family: 'Sarabun', sans-serif;
+      background-color: #64748b;
+      color: #ffffff;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
 
+  <div class="card">
+    <h3>📷 สแกนบัตรสมาชิก QR Code</h3>
+    <div class="sub-title">ระบบบริการน้ำดื่ม เทศบาลตำบลสันป่าตอง</div>
+
+    <div id="reader"></div>
+    <div id="status">กำลังขอสิทธิ์เปิดกล้อง...</div>
+
+    <button type="button" id="btnRetry" class="btn-retry" onclick="startCamera()">🔄 ลองเปิดกล้องอีกครั้ง</button>
+    <button type="button" class="btn-back" onclick="returnToAppsScript('')">⬅️ ยกเลิก / กลับไปกรอกรหัสเอง</button>
+  </div>
+
+  <script>
+    const APPS_SCRIPT_URL = "https://script.google.com/a/macros/g.cmru.ac.th/s/AKfycbzgsznHpFn4-sErE5WJ5RzAcqtPAOYtihBJqZueZxtTVNbeaXGj56YA0ZpXFq5AnP_G/exec";
+
+    function returnToAppsScript(memberId) {
+      if (memberId) {
+        window.location.href = APPS_SCRIPT_URL + "?memberId=" + encodeURIComponent(memberId.trim());
+      } else {
+        window.location.href = APPS_SCRIPT_URL;
+      }
+    }
+
+    let html5QrCode = null;
+    let isScanned = false;
+
+    function onScanSuccess(decodedText) {
+      if (isScanned) return;
+      isScanned = true;
+      const statusEl = document.getElementById("status");
+      statusEl.style.color = "#16a34a";
+      statusEl.innerText = "✅ พบรหัสสมาชิก: " + decodedText + "\nกำลังกลับไปหน้าบันทึก...";
+
+      if (html5QrCode) {
+        html5QrCode.stop().then(function() {
+          returnToAppsScript(decodedText);
+        }).catch(function() {
+          returnToAppsScript(decodedText);
+        });
+      } else {
+        returnToAppsScript(decodedText);
+      }
+    }
+
+    function showCameraError(err) {
+      const statusEl = document.getElementById("status");
+      const btnRetry = document.getElementById("btnRetry");
+      statusEl.style.color = "#dc2626";
+      btnRetry.style.display = "inline-block";
+
+      let errMsg = "";
+      if (typeof err === "string") {
+        errMsg = err;
+      } else if (err && (err.message || err.name)) {
+        errMsg = (err.name ? err.name + ": " : "") + (err.message || "");
+      } else {
+        errMsg = "เบราว์เซอร์บล็อกการเข้าถึงกล้อง";
+      }
+
+      const ua = navigator.userAgent || "";
+      if (ua.indexOf("Line") !== -1 || ua.indexOf("FBAN") !== -1 || ua.indexOf("FBAV") !== -1) {
+        statusEl.innerHTML = "❌ เปิดกล้องในแอป LINE/Facebook ไม่ได้<br><small style='color:#334155;'>กรุณากดปุ่มจุด 3 จุดมุมขวา แล้วเลือก <b>'เปิดด้วยเบราว์เซอร์เริ่มต้น (Chrome / Safari)'</b></small>";
+      } else {
+        statusEl.innerHTML = "❌ ไม่สามารถเปิดกล้องได้ (" + errMsg + ")<br><small style='color:#334155;'>กรุณากด 'อนุญาต (Allow)' การใช้กล้อง หรือตรวจสอบว่าไม่ได้เปิดกล้องค้างไว้ในแอปอื่น</small>";
+      }
+    }
+
+    async function startCamera() {
+      const statusEl = document.getElementById("status");
+      const btnRetry = document.getElementById("btnRetry");
+      statusEl.style.color = "#0284c7";
+      statusEl.innerText = "กำลังเปิดกล้อง...";
+      btnRetry.style.display = "none";
+
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        showCameraError("อุปกรณ์หรือเบราว์เซอร์ไม่รองรับกล้อง (กรุณาเปิดผ่าน HTTPS บน Chrome/Safari)");
+        return;
+      }
+
+      try {
+        if (html5QrCode) {
+          try { await html5QrCode.stop(); } catch (e) {}
+        }
+        html5QrCode = new Html5Qrcode("reader");
+
+        const config = { fps: 10, qrbox: { width: 230, height: 230 } };
+
+        const cameras = await Html5Qrcode.getCameras();
+        if (cameras && cameras.length > 0) {
+          let selectedCameraId = cameras[cameras.length - 1].id;
+          for (let i = 0; i < cameras.length; i++) {
+            const label = (cameras[i].label || "").toLowerCase();
+            if (label.indexOf("back") !== -1 || label.indexOf("rear") !== -1 || label.indexOf("environment") !== -1) {
+              selectedCameraId = cameras[i].id;
+              break;
+            }
+          }
+          await html5QrCode.start(selectedCameraId, config, onScanSuccess, function() {});
+        } else {
+          await html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess, function() {});
+        }
+
+        statusEl.innerText = "นำ QR Code บนบัตรสมาชิกมาจ่อในกรอบ";
+      } catch (err) {
+        showCameraError(err);
+      }
+    }
+
+    window.addEventListener("load", startCamera);
+  </script>
+
+</body>
+</html>
