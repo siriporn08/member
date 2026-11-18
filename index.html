@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>สแกน QR Code สมาชิก - เทศบาลตำบลสันป่าตอง</title>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600;700&family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <style>
+    body {
+      font-family: 'Sarabun', sans-serif;
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card {
+      width: 100%;
+      max-width: 430px;
+      background: #ffffff;
+      padding: 24px 20px;
+      border-radius: 18px;
+      box-shadow: 0 10px 30px rgba(2, 132, 199, 0.15);
+      border: 1px solid #bae6fd;
+    }
+    h3 {
+      font-family: 'Prompt', sans-serif;
+      color: #0284c7;
+      margin: 0 0 6px 0;
+    }
+    .sub-title {
+      color: #64748b;
+      font-size: 14px;
+      margin-bottom: 16px;
+    }
+    #reader {
+      width: 100%;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #000;
+    }
+    #status {
+      margin: 16px 0;
+      font-size: 16px;
+      font-weight: bold;
+      color: #0284c7;
+    }
+    .btn-back {
+      display: inline-block;
+      width: 100%;
+      padding: 12px 20px;
+      font-size: 16px;
+      font-weight: bold;
+      font-family: 'Sarabun', sans-serif;
+      background-color: #64748b;
+      color: #ffffff;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h3>📷 สแกนบัตรสมาชิก QR Code</h3>
+    <div class="sub-title">ระบบบริการน้ำดื่ม เทศบาลตำบลสันป่าตอง</div>
+
+    <div id="reader"></div>
+    <div id="status">กำลังเปิดกล้อง...</div>
+
+    <button type="button" class="btn-back" onclick="returnToAppsScript('')">⬅️ ยกเลิก / กลับไปกรอกรหัสเอง</button>
+  </div>
+
+  <script>
+    // =========================================================================
+    // นำ Web App URL ของ Google Apps Script (ที่ลงท้ายด้วย /exec) มาวางตรงนี้
+    const APPS_SCRIPT_URL = "https://script.google.com/u/0/home/projects/1RyqYLWtGgpEXET1X0VR0FMg0RrzLfzQIkMYvPw6Z5H1iXPObdaFo_w5Q/edit";
+    // =========================================================================
+
+    function returnToAppsScript(memberId) {
+      if (memberId) {
+        window.location.href = APPS_SCRIPT_URL + "?memberId=" + encodeURIComponent(memberId.trim());
+      } else {
+        window.location.href = APPS_SCRIPT_URL;
+      }
+    }
+
+    const html5QrCode = new Html5Qrcode("reader");
+
+    html5QrCode.start(
+      { facingMode: { ideal: "environment" } },
+      { fps: 10, qrbox: { width: 250, height: 250 } },
+      function(decodedText) {
+        const statusEl = document.getElementById("status");
+        statusEl.style.color = "#16a34a";
+        statusEl.innerText = "✅ พบรหัสสมาชิก: " + decodedText + " กำลังกลับไปหน้าบันทึก...";
+
+        html5QrCode.stop().then(function() {
+          returnToAppsScript(decodedText);
+        }).catch(function() {
+          returnToAppsScript(decodedText);
+        });
+      },
+      function() {}
+    ).then(function() {
+      document.getElementById("status").innerText = "นำ QR Code บนบัตรสมาชิกมาจ่อในกรอบ";
+    }).catch(function(err) {
+      const statusEl = document.getElementById("status");
+      statusEl.style.color = "#dc2626";
+      statusEl.innerText = "❌ ไม่สามารถเปิดกล้องได้ (" + err.name + ") กรุณาอนุญาตสิทธิ์กล้อง";
+    });
+  </script>
+
+</body>
+</html>
